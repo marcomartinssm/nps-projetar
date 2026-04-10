@@ -722,41 +722,16 @@
 </div>
 
 <script>
-  // ── Supabase config ──────────────────────────────────────────
-  const SUPABASE_URL  = 'https://jgdbnkwhmesgjvsymgma.supabase.co';
-  const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpnZGJua3dobWVzZ2p2c3ltZ21hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5MjAxODUsImV4cCI6MjA5MDQ5NjE4NX0.2KUPjnJE9vhzYviho16e3afWxyQL0usSjKXf2TLV00Q';
-
-  // ── Cole aqui a URL do seu webhook no n8n ────────────────────
+  // ── Webhook n8n (único ponto de saída — credenciais ficam no servidor) ──
   const N8N_WEBHOOK = 'https://dinastia-n8n-webhook.saxddq.easypanel.host/webhook/6647a151-522b-4133-bd8d-80329e16bfb2';
 
-  async function insertSupabase(table, payload) {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+  async function enviarParaN8n(payload) {
+    const res = await fetch(N8N_WEBHOOK, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`,
-        'Prefer': 'return=minimal'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
-    if (!res.ok) {
-      const err = await res.text();
-      throw new Error(err);
-    }
-  }
-
-  async function dispararWebhook(payload) {
-    try {
-      await fetch(N8N_WEBHOOK, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-    } catch (e) {
-      // Webhook falhou silenciosamente — Supabase já salvou
-      console.warn('Webhook n8n não alcançado:', e.message);
-    }
+    if (!res.ok) throw new Error('Erro ao conectar com o servidor.');
   }
 
   // ── Helpers ──────────────────────────────────────────────────
@@ -817,11 +792,10 @@
         comentario_geral:       val('inq-comentario-geral'),
         criado_em:              new Date().toISOString()
       };
-      await insertSupabase('nps_inquilino', payload);
-      await dispararWebhook(payload);
+      await enviarParaN8n(payload);
       showThankYou();
     } catch (e) {
-      alert('Erro ao enviar. Verifique sua conexão e tente novamente.\n\n' + e.message);
+      alert('Erro ao enviar. Verifique sua conexão e tente novamente.');
       setLoading(btn, false);
     }
   }
@@ -851,11 +825,10 @@
         comentario_geral:       val('prop-comentario-geral'),
         criado_em:              new Date().toISOString()
       };
-      await insertSupabase('nps_proprietario', payload);
-      await dispararWebhook(payload);
+      await enviarParaN8n(payload);
       showThankYou();
     } catch (e) {
-      alert('Erro ao enviar. Verifique sua conexão e tente novamente.\n\n' + e.message);
+      alert('Erro ao enviar. Verifique sua conexão e tente novamente.');
       setLoading(btn, false);
     }
   }
